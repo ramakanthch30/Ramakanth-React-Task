@@ -1,6 +1,12 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
 import "./App.css";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import  ExportToExcel  from "./ExportToExcel";
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
+import Card from 'react-bootstrap/Card';
+import Alert from 'react-bootstrap/Alert';
+
 
 const App = () => {
   const [search, setSearch] = useState("");
@@ -8,6 +14,15 @@ const App = () => {
   const [resetData, setResetData] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectedRowIds, setSelectedRowIds] = useState([]);
+  const [show, setShow] = useState(false);
+  const [selectedItem,setSelectedItem] = useState(null);
+
+  const handleClose = () => {
+    setSelectedItem(null);
+    setShow(false);
+  }
+
+
   const fileName = "myfile";
   useEffect(() => {
     fetch("https://dummyjson.com/products")
@@ -19,6 +34,9 @@ const App = () => {
           setResetData(res.products);
         }, 1000);
       });
+  }, []);
+  useEffect(() => {
+    
   }, []);
   const onSearch = (event) => {
     setSearch(event.target.value);
@@ -42,7 +60,8 @@ const App = () => {
     });
     setData(newData);
   };
-  const toggleChange = (item) => {
+  const toggleChange = (event, item) => {
+    event.stopPropagation();
     let newSelectedRows = [...selectedRows];
     let newSelectedRowIds = [...selectedRowIds];
     newSelectedRows.push(item);
@@ -50,6 +69,12 @@ const App = () => {
     setSelectedRows(newSelectedRows);
     setSelectedRowIds(newSelectedRowIds);
   };
+  const onRowClick = (e, item) => {
+    e.preventDefault();
+    setSelectedItem(item);
+    setShow(true);
+    console.log(item);
+  }
   return (
     <div className="App">
       <h1>List of Products</h1>
@@ -59,6 +84,32 @@ const App = () => {
       </div> <br />
       <ExportToExcel apiData={selectedRows} fileName={fileName} />
       <hr />
+
+      <Modal show={show && selectedItem} onHide={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>{selectedItem && selectedItem.title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Card >
+      <Card.Img variant="top" src={selectedItem && selectedItem.thumbnail} />
+      <Card.Body>
+        <Card.Title>About</Card.Title>
+        <Card.Text>
+        {selectedItem && selectedItem.description}
+        </Card.Text>
+        <Button variant="primary">
+        <Alert.Link target='_blank' rel="noreferrer" href={selectedItem && selectedItem.thumbnail} download="logo">Download Image</Alert.Link>
+          </Button>
+        
+      </Card.Body>
+    </Card>
+          </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
       <table >
         <thead >
           <tr>
@@ -113,18 +164,18 @@ const App = () => {
         <tbody>
           {data.length ? (
             data.map((item) => (
-              <tr key={item.id}>
+              <tr key={item.id} onClick={(e)=>onRowClick(e,item)}>
                 <td>
                   <input
                     type="checkbox"
                     defaultChecked={selectedRowIds.includes(item.id)}
-                    onChange={() => toggleChange(item)}
+                    onClick={(e) => toggleChange(e, item)}
                   />{item.id}
                 </td>
                 <td>{item.title}</td>
                 <td>{item.brand}</td>
                 <td>
-                   <img src={item?.images[0]} widht="50px" height="50px"/>
+                   <img src={item?.images[0]} widht="50px" height="50px" alt='thumbmail of item'/>
                 </td>
                 <td>{item.price}</td>
                 <td>{item.discountPercentage}</td>
